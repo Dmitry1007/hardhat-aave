@@ -1,4 +1,3 @@
-const { getWeth } = require("./getWeth")
 const { getNamedAccounts, ethers } = require("hardhat")
 const { networkConfig } = require("../helper-hardhat-config")
 
@@ -11,9 +10,9 @@ async function main() {
     // deposit
     const wethTokenAddress = networkConfig[network.config.chainId].wethToken
     // approve
-    await approveErc20(wethTokenAddress, lendingPool.address, ethers.utils.parseEther("0.1"), deployer)
+    await approveErc20(wethTokenAddress, lendingPool.address, ethers.utils.parseEther("1"), deployer)
     console.log("Depositing...")
-    await lendingPool.deposit(wethTokenAddress, ethers.utils.parseEther("0.1"), deployer, 0)
+    await lendingPool.deposit(wethTokenAddress, ethers.utils.parseEther("1"), deployer, 0)
     console.log("Deposited!")
     // Borrow
     // How much we borrowed, have in collateral, and how much can we borrow?
@@ -22,9 +21,9 @@ async function main() {
 
 async function getBorrowUserData(lendingPool, account) {
     const { totalCollateralETH, totalDebtETH, availableBorrowsETH, currentLiquidationThreshold, ltv, healthFactor } = await lendingPool.getUserAccountData(account)
-    console.log(`totalCollateralETH: ${totalCollateralETH.toString()}`)
-    console.log(`totalDebtETH: ${totalDebtETH.toString()}`)
-    console.log(`availableBorrowsETH: ${availableBorrowsETH.toString()}`)
+    console.log(`totalCollateralETH: ${ethers.utils.formatEther(totalCollateralETH)}`)
+    console.log(`totalDebtETH: ${ethers.utils.formatEther(totalDebtETH)}`)
+    console.log(`availableBorrowsETH: ${ethers.utils.formatEther(availableBorrowsETH)}`)
     console.log(`currentLiquidationThreshold: ${currentLiquidationThreshold.toString()}`)
     console.log(`ltv: ${ltv.toString()}`)
     console.log(`healthFactor: ${healthFactor.toString()}`)
@@ -47,7 +46,18 @@ async function approveErc20(erc20Address, spenderAddress, amountToSpend, account
     const txResponse = await erc20Token.approve(spenderAddress, amountToSpend)
     await txResponse.wait(1)
     const allowance = await erc20Token.allowance(account, spenderAddress)
-    console.log(`Allowance: ${allowance.toString()}`)
+    console.log(`Allowance: ${ethers.utils.formatEther(allowance)}`)
+}
+
+async function getWeth() {
+    const { deployer } = await getNamedAccounts()
+    const iWeth = await ethers.getContractAt("IWeth", networkConfig[network.config.chainId].wethToken, deployer)
+    const txResponse = await iWeth.deposit({
+        value: ethers.utils.parseEther("1"),
+    })
+    await txResponse.wait(1)
+    const wethBalance = await iWeth.balanceOf(deployer)
+    console.log(`Got ${ethers.utils.formatEther(wethBalance)} WETH`)
 }
 
 main()
