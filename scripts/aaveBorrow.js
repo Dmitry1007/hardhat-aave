@@ -11,15 +11,24 @@ async function main() {
     // deposit
     const wethTokenAddress = networkConfig[network.config.chainId].wethToken
     // approve
-    await approveErc20(
-        wethTokenAddress,
-        lendingPool.address,
-        ethers.utils.parseEther("0.1"),
-        deployer
-    )
+    await approveErc20(wethTokenAddress, lendingPool.address, ethers.utils.parseEther("0.1"), deployer)
     console.log("Depositing...")
     await lendingPool.deposit(wethTokenAddress, ethers.utils.parseEther("0.1"), deployer, 0)
     console.log("Deposited!")
+    // Borrow
+    // How much we borrowed, have in collateral, and how much can we borrow?
+    let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(lendingPool, deployer)
+}
+
+async function getBorrowUserData(lendingPool, account) {
+    const { totalCollateralETH, totalDebtETH, availableBorrowsETH, currentLiquidationThreshold, ltv, healthFactor } = await lendingPool.getUserAccountData(account)
+    console.log(`totalCollateralETH: ${totalCollateralETH.toString()}`)
+    console.log(`totalDebtETH: ${totalDebtETH.toString()}`)
+    console.log(`availableBorrowsETH: ${availableBorrowsETH.toString()}`)
+    console.log(`currentLiquidationThreshold: ${currentLiquidationThreshold.toString()}`)
+    console.log(`ltv: ${ltv.toString()}`)
+    console.log(`healthFactor: ${healthFactor.toString()}`)
+    return { availableBorrowsETH, totalDebtETH }
 }
 
 async function getLendingPool(account) {
