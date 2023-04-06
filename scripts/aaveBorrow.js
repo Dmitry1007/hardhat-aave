@@ -25,6 +25,14 @@ async function main() {
     await borrowDai(lendingPool, daiTokenAddress, amountDaiToBorrowWei, deployer)
     // How much we borrowed, have in collateral, and how much can we borrow?
     await getBorrowUserData(lendingPool, deployer)
+    // Repay
+    await repayDai(lendingPool, daiTokenAddress, amountDaiToBorrowWei, deployer)
+}
+
+async function repayDai(lendingPool, daiTokenAddress, amountToRepay, account) {
+    console.log("Repaying DAI......")
+    const repayTx = await lendingPool.repay(daiTokenAddress, amountToRepay, 1, account)
+    await repayTx.wait(1)
 }
 
 async function borrowDai(lendingPool, daiTokenAddress, amountToBorrow, account) {
