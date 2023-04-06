@@ -5,8 +5,6 @@ async function main() {
     const { deployer } = await getNamedAccounts()
     await getWeth(deployer)
     const lendingPool = await getLendingPool(deployer)
-    console.log(`LendingPool Address: ${lendingPool.address}`)
-
     // deposit
     const wethTokenAddress = networkConfig[network.config.chainId].wethToken
     // approve
@@ -19,9 +17,20 @@ async function main() {
     let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(lendingPool, deployer)
     // How much DAI can we borrow based on the ETH price?
     const daiEthPrice = await getDaiPrice()
+    // We will borrow 95% of the availableBorrowsETH
     const amountDaiToBorrow = availableBorrowsETH.toString() * 0.95 * (1 / daiEthPrice.toNumber())
     console.log(`You can borrow ${amountDaiToBorrow} DAI`)
     const amountDaiToBorrowWei = ethers.utils.parseEther(amountDaiToBorrow.toString())
+    const daiTokenAddress = networkConfig[network.config.chainId].daiToken
+    await borrowDai(lendingPool, daiTokenAddress, amountDaiToBorrowWei, deployer)
+    // How much we borrowed, have in collateral, and how much can we borrow?
+    await getBorrowUserData(lendingPool, deployer)
+}
+
+async function borrowDai(lendingPool, daiTokenAddress, amountToBorrow, account) {
+    console.log("Borrowing DAI......")
+    const borrowTx = await lendingPool.borrow(daiTokenAddress, amountToBorrow, 1, 0, account)
+    await borrowTx.wait(1)
 }
 
 async function getDaiPrice() {
