@@ -19,6 +19,8 @@ async function main() {
     let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(lendingPool, deployer)
     // How much DAI can we borrow based on the ETH price?
     const daiEthPrice = await getDaiPrice()
+    const amountDaiToBorrow = availableBorrowsETH.toString() * 0.95 * (1 / daiEthPrice.toNumber())
+    console.log(`You can borrow ${amountDaiToBorrow} DAI`)
 }
 
 async function getDaiPrice() {
@@ -28,11 +30,9 @@ async function getDaiPrice() {
         networkConfig[network.config.chainId].daiEthPriceFeed
     )
     const price = (await daiEthPriceFeed.latestRoundData())[1] // answer
-    // console log the price in DAI
-    console.log(`This how much ETH you could buy with 1 DAI ${ethers.utils.formatEther(price)}`)
-    // calculate the current price of ETH in DAI
+    console.log(`This how much ETH you could buy with 1 DAI - ${ethers.utils.formatEther(price)}`)
     const ethPriceInDai = ethers.utils.parseEther("1").div(price)
-    console.log(`This how much DAI you could buy with 1 ETH i.e. price of 1 ETH ${ethPriceInDai}`)
+    console.log(`This how much DAI you could buy with 1 ETH i.e. price of 1 ETH - ${ethPriceInDai}`)
     return price
 }
 
