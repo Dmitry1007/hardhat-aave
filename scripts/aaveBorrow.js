@@ -21,6 +21,7 @@ async function main() {
     const daiEthPrice = await getDaiPrice()
     const amountDaiToBorrow = availableBorrowsETH.toString() * 0.95 * (1 / daiEthPrice.toNumber())
     console.log(`You can borrow ${amountDaiToBorrow} DAI`)
+    const amountDaiToBorrowWei = ethers.utils.parseEther(amountDaiToBorrow.toString())
 }
 
 async function getDaiPrice() {
