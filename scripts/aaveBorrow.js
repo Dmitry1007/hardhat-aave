@@ -2,8 +2,8 @@ const { getNamedAccounts, ethers } = require("hardhat")
 const { networkConfig } = require("../helper-hardhat-config")
 
 async function main() {
-    await getWeth()
     const { deployer } = await getNamedAccounts()
+    await getWeth(deployer)
     const lendingPool = await getLendingPool(deployer)
     console.log(`LendingPool Address: ${lendingPool.address}`)
 
@@ -49,14 +49,13 @@ async function approveErc20(erc20Address, spenderAddress, amountToSpend, account
     console.log(`Allowance: ${ethers.utils.formatEther(allowance)}`)
 }
 
-async function getWeth() {
-    const { deployer } = await getNamedAccounts()
-    const iWeth = await ethers.getContractAt("IWeth", networkConfig[network.config.chainId].wethToken, deployer)
+async function getWeth(account) {
+    const iWeth = await ethers.getContractAt("IWeth", networkConfig[network.config.chainId].wethToken, account)
     const txResponse = await iWeth.deposit({
         value: ethers.utils.parseEther("1"),
     })
     await txResponse.wait(1)
-    const wethBalance = await iWeth.balanceOf(deployer)
+    const wethBalance = await iWeth.balanceOf(account)
     console.log(`Got ${ethers.utils.formatEther(wethBalance)} WETH`)
 }
 
