@@ -39,11 +39,16 @@ async function main() {
     const deployerDaiBalanceBeforeRepay = await daiErc20Token.balanceOf(deployer)
     console.log(`Deployer's DAI balance before repay: ${deployerDaiBalanceBeforeRepay}`)
 
-    // Repay
+    // Repay borrowed DAI
     await repayDai(lendingPool, daiTokenAddress, amountDaiToBorrowInWei.toString(), deployer)
     await getBorrowUserData(lendingPool, deployer)
     const deployerDaiBalanceAfterRepay = await daiErc20Token.balanceOf(deployer)
     console.log(`Deployer's DAI balance after repay: ${deployerDaiBalanceAfterRepay}`)
+
+    // Repay accrued interest on borrowed DAI
+    const { totalDebtETH } = await getBorrowUserData(lendingPool, deployer)
+    await repayDai(lendingPool, daiTokenAddress, totalDebtETH.toString(), deployer)
+    await getBorrowUserData(lendingPool, deployer)
 }
 
 async function repayDai(lendingPool, daiTokenAddress, amountToRepay, account) {
