@@ -5,6 +5,9 @@ async function main() {
     const { deployer } = await getNamedAccounts()
     const wethTokenAddress = networkConfig[network.config.chainId].wethToken
     const daiTokenAddress = networkConfig[network.config.chainId].daiToken
+    const daiErc20Token = await ethers.getContractAt("IERC20", daiTokenAddress, deployer)
+    const deployerDaiBalance = await daiErc20Token.balanceOf(deployer)
+    console.log(`Deployer DAI balance: ${deployerDaiBalance}`)
     // wrap ETH
     await getWeth(deployer)
     const lendingPool = await getLendingPool(deployer)
@@ -16,26 +19,31 @@ async function main() {
     let { availableBorrowsETH } = await getBorrowUserData(lendingPool, deployer)
 
     const daiEthPrice = await getDaiPrice()
-    console.log(`Available to borrow: ${availableBorrowsETH * (1 / daiEthPrice)} DAI`)
+    console.log(`DAI/ETH price: ${daiEthPrice}`)
+    console.log(`Available to borrow in DAI: ${availableBorrowsETH * (1 / daiEthPrice)}`)
     // We will borrow 50% of the availableBorrowsETH in DAI
-    const amountDaiToBorrow = availableBorrowsETH.toString() * 0.5 * (1 / daiEthPrice.toNumber())
-    const amountDaiToBorrowInWei = availableBorrowsETH.toString() * 0.5
+    const amountDaiToBorrow = availableBorrowsETH * 0.5 * (1 / daiEthPrice)
+    const amountDaiToBorrowInWei = availableBorrowsETH * 0.5
     console.log(`Borrowing 50% - ${amountDaiToBorrow} DAI`)
-    console.log(`Borrowing 50% - ${amountDaiToBorrowInWei.toString()} WEI`)
+    console.log(`Borrowing 50% - ${amountDaiToBorrowInWei} WEI`)
+
+    const deployerDaiBalanceBeforeBorrow = await daiErc20Token.balanceOf(deployer)
+    console.log(`Deployer's DAI balance before borrow: ${deployerDaiBalanceBeforeBorrow}`)
+
     // Borrow DAI
-    // console.log("Borrowing DAI......")
-    // await lendingPool.borrow(daiTokenAddress, amountDaiToBorrowInWei.toString(), 1, 0, deployer)
-    // const { totalDebtETH } = await getBorrowUserData(lendingPool, deployer)
+    console.log("Borrowing DAI......")
+    await lendingPool.borrow(daiTokenAddress, amountDaiToBorrowInWei.toString(), 1, 0, deployer)
+    await getBorrowUserData(lendingPool, deployer)
+    // get deployer's DAI balance before repay
 
-    // console.log(`You borrowed ${totalDebtETH} WEI worth of DAI`)
-    // // get deployer's DAI balance before repay
-    // const daiErc20Token = await ethers.getContractAt("IERC20", daiTokenAddress, deployer)
-    // const deployerDaiBalanceBeforeRepay = await daiErc20Token.balanceOf(deployer)
-    // console.log(`Deployer's DAI balance before repay: ${deployerDaiBalanceBeforeRepay}`)
+    const deployerDaiBalanceBeforeRepay = await daiErc20Token.balanceOf(deployer)
+    console.log(`Deployer's DAI balance before repay: ${deployerDaiBalanceBeforeRepay}`)
 
-    // // Repay
-    // await repayDai(lendingPool, daiTokenAddress, amountDaiToBorrowWei, deployer)
-    // await getBorrowUserData(lendingPool, deployer)
+    // Repay
+    await repayDai(lendingPool, daiTokenAddress, amountDaiToBorrowInWei.toString(), deployer)
+    await getBorrowUserData(lendingPool, deployer)
+    const deployerDaiBalanceAfterRepay = await daiErc20Token.balanceOf(deployer)
+    console.log(`Deployer's DAI balance after repay: ${deployerDaiBalanceAfterRepay}`)
 }
 
 async function repayDai(lendingPool, daiTokenAddress, amountToRepay, account) {
